@@ -1,0 +1,4 @@
+name = "JuLox"
+uuid = "5a1867a0-f4f2-4489-a019-b6be53ca0ffa"
+authors = ["Nathan Daly <nhdaly@gmail.com>"]
+version = "0.1.0"

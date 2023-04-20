@@ -1,0 +1,7 @@
+// this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <= == // operators
+
+var language = "lox";
+
+print 2 + 2;
