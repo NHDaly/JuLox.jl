@@ -206,14 +206,18 @@ function add_string!(tokens, source, line, start, current)
     current += 1
 
     # Trim the surrounding quotes.
-    value = @view source[start+1:current-2]
+    # TODO: Somehow the view causes allocations....
+    # value = @view source[start+1:current-2]
+    value = source[start+1:current-2]
     add_token!(tokens, source, line, start, current, STRING, value)
     return current, line
 end
 
 function add_number!(tokens, source, line, start, current)
     # support '_' in our numbers
+    has_underscore = false
     while is_digit(peek(source, current)) || peek(source, current) == '_'
+        peek(source, current) == '_' && (has_underscore = true)
         current += 1
     end
     if peek(source, current) == '.' && is_digit(peek_next(source, current))
@@ -221,10 +225,15 @@ function add_number!(tokens, source, line, start, current)
         current += 1
 
         while is_digit(peek(source, current)) || peek(source, current) == '_'
+            peek(source, current) == '_' && (has_underscore = true)
             current += 1
         end
     end
-    value = parse(Float64, replace(@view(source[start:current-1]), '_' => ""))
+    if has_underscore
+        value = parse(Float64, replace(@view(source[start:current-1]), '_' => ""))
+    else
+        value = parse(Float64, @view(source[start:current-1]))
+    end
     add_token!(tokens, source, line, start, current, NUMBER, value)
     return current
 end
