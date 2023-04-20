@@ -63,9 +63,12 @@ struct Position
     char::Int
 end
 
-function scan_tokens(source::AbstractString)
+function new_tokens(source::AbstractString = "")
     tokens = Tuple{Token,Position}[]
     sizehint!(tokens, length(source) ÷ 5)  # rough guess for avg token length
+end
+
+function scan_tokens(source::AbstractString, tokens = new_tokens(source))
     start = 1
     current = 1
     line = 1
