@@ -68,10 +68,20 @@ function new_tokens(source::AbstractString = "")
     sizehint!(tokens, length(source) ÷ 5)  # rough guess for avg token length
 end
 
-function scan_tokens(source::AbstractString, tokens = new_tokens(source))
+struct Source{Str <: AbstractString}
+    str::Str
+    len::Int
+end
+Source(str) = Source(str, length(str))
+Base.length(s::Source) = s.len
+Base.getindex(s::Source, args...) = Base.getindex(s.str, args...)
+Base.view(s::Source, args...) = Base.view(s.str, args...)
+
+function scan_tokens(str::AbstractString, tokens = new_tokens(str))
     start = 1
     current = 1
     line = 1
+    source = Source(str)
 
     while !is_at_end(source, current)
         start = current
