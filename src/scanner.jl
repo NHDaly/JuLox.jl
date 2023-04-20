@@ -51,12 +51,24 @@
     EOF
 end
 
+@enum LiteralType NOTHING LITERAL_STRING LITERAL_FLOAT
+struct Literal
+    typ::LiteralType
+    substr::SubString{String}
+    float::Float64
+end
+NothingLiteral() = Literal(NOTHING, @view(""[1:-1]), 0.0)
+StringLiteral(val) = Literal(LITERAL_STRING, val, 0.0)
+FloatLiteral(val) = Literal(LITERAL_FLOAT, @view(""[1:-1]), val)
 struct Token
     token_type::TokenType
     lexeme::SubString{String}
-    literal::Any
+    literal::Literal
 end
-Token(type, lexeme) = Token(type, lexeme, nothing)
+Token(type, lexeme) = Token(type, lexeme, NothingLiteral())
+Token(type, lexeme, ::Nothing) = Token(type, lexeme, NothingLiteral())
+Token(type, lexeme, value::AbstractString) = Token(type, lexeme, StringLiteral(value))
+Token(type, lexeme, value::Number) = Token(type, lexeme, FloatLiteral(value))
 
 struct Position
     line::Int
@@ -65,7 +77,7 @@ end
 
 function new_tokens(source::AbstractString = "")
     tokens = Tuple{Token,Position}[]
-    sizehint!(tokens, length(source) ÷ 5)  # rough guess for avg token length
+    sizehint!(tokens, length(source) ÷ 2)  # rough guess for avg token length
 end
 
 struct Source{Str <: AbstractString}
@@ -181,8 +193,8 @@ function scan_token!(tokens, source, start, current, line)
 
 end
 
-function add_token!(tokens, source, line, start, current, token_type, literal = nothing)
-    lexeme = @view source[start:current-1]
+function add_token!(tokens, source, line, start, current, token_type::TokenType, literal = nothing)
+    lexeme = @view(source[start:current-1])::SubString{String}
     token, pos = Token(token_type, lexeme, literal), Position(line, start)
     push!(tokens, (token, pos))
     return nothing
@@ -216,10 +228,10 @@ function add_string!(tokens, source, line, start, current)
     current += 1
 
     # Trim the surrounding quotes.
-    # TODO: Somehow the view causes allocations....
-    # value = @view source[start+1:current-2]
-    value = source[start+1:current-2]
-    add_token!(tokens, source, line, start, current, STRING, value)
+    # TODO: Somehow the view causes allocations....? Maybe?
+    value = @view(source[start+1:current-2])::SubString{String}
+    # value = source[start+1:current-2]
+    add_token!(tokens, source, line, start, current, STRING, value::SubString{String})
     return current, line
 end
 
@@ -244,6 +256,7 @@ function add_number!(tokens, source, line, start, current)
     else
         value = parse(Float64, @view(source[start:current-1]))
     end
+    value = value::Float64
     add_token!(tokens, source, line, start, current, NUMBER, value)
     return current
 end
