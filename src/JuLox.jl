@@ -2,6 +2,8 @@ module JuLox
 
 #include("scanner-mutable.jl")
 include("scanner.jl")
+#include("ast-hierarchical.jl")
+include("ast-flat.jl")
 
 function main(args = ARGS)
     if length(args) > 1
