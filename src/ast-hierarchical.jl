@@ -1,6 +1,6 @@
 module Exprs
 
-using ..JuLox: Token
+using JuLox.Scanners: Token
 
 abstract type Expr end
 

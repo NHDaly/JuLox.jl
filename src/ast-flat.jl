@@ -1,6 +1,6 @@
 module Exprs
 
-using ..JuLox: Token
+using JuLox.Scanners: Token
 
 @enum ExprType begin
     BINARY

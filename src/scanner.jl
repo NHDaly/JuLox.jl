@@ -1,3 +1,4 @@
+module Scanners
 
 @enum TokenType begin
     # Single-character tokens.
@@ -60,6 +61,7 @@ end
 NothingLiteral() = Literal(NOTHING, @view(""[1:-1]), 0.0)
 StringLiteral(val) = Literal(LITERAL_STRING, val, 0.0)
 FloatLiteral(val) = Literal(LITERAL_FLOAT, @view(""[1:-1]), val)
+value(l) = l.typ === LITERAL_STRING ? l.substr : l.typ === LITERAL_FLOAT ? l.float : nothing
 struct Token
     token_type::TokenType
     lexeme::SubString{String}
@@ -295,3 +297,5 @@ KEYWORDS["true"]   = TRUE
 KEYWORDS["var"]    = VAR
 KEYWORDS["while"]  = WHILE
 
+
+end
