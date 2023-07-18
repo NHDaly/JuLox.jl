@@ -7,6 +7,7 @@ using JuLox.Scanners: Token
     GROUPING
     LITERAL
     UNARY
+    TERNARY
 end
 
 struct Expr
@@ -20,6 +21,7 @@ Binary(left::Expr, operator::Token, right::Expr) = Expr(BINARY, Expr[Literal(ope
 Unary(operator::Token, expr::Expr) = Expr(UNARY, Expr[Literal(operator), expr])
 Grouping(expr::Expr) = Expr(GROUPING, Expr[expr])
 Literal(val::Any) = Expr(LITERAL, val)
+Ternary(expr::Expr, left::Expr, right::Expr) = Expr(TERNARY, Expr[expr, left, right])
 
 
 
@@ -60,6 +62,9 @@ function print_ast(io::IO, e::Expr)
         args = e.args_or_literal::Vector{Expr}
         op_token = args[1].args_or_literal::Token
         parenthesize(io, op_token.lexeme, args[2])
+    elseif e.kind == TERNARY
+        args = e.args_or_literal::Vector{Expr}
+        parenthesize(io, "?:", args[1], args[2], args[3])
     end
     return nothing
 end

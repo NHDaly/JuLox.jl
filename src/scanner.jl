@@ -1,5 +1,7 @@
 module Scanners
 
+using JuLox: report_error
+
 @enum TokenType begin
     # Single-character tokens.
     LEFT_PAREN
@@ -14,6 +16,9 @@ module Scanners
     SEMICOLON
     SLASH
     STAR
+
+    QUESTION
+    COLON
 
     # One or two character tokens.
     BANG
@@ -132,6 +137,10 @@ function scan_token!(tokens, source, start, current, line)
         add_token!(tokens, source, line, start, current, SEMICOLON)
     elseif c == '*'
         add_token!(tokens, source, line, start, current, STAR)
+    elseif c == '?'
+        add_token!(tokens, source, line, start, current, QUESTION)
+    elseif c == ':'
+        add_token!(tokens, source, line, start, current, COLON)
     # 2-char tokens
     elseif c == '!'
         if peek(source, current) == '='

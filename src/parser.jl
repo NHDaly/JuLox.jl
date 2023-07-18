@@ -5,11 +5,13 @@ import JuLox.Scanners
 
 using JuLox: report_error
 using JuLox.Scanners: Token, Position, value
-using JuLox.Exprs: Unary, Literal, Grouping, Binary
+using JuLox.Exprs: Unary, Literal, Grouping, Binary, Ternary
 
 const Tok = Scanners
 #=
-expression     → equality ;
+expression     → ternary ;
+ternary        → equality "?" expression ":" expression
+               | equality ;
 equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term           → factor ( ( "-" | "+" ) factor )* ;
@@ -21,7 +23,19 @@ primary        → NUMBER | STRING | "true" | "false" | "nil"
 =#
 
 function expression(tokens, i)
-    return equality(tokens, i)
+    return ternary(tokens, i)
+end
+
+function ternary(tokens, i)
+    expr, i = equality(tokens, i)
+    if check(tokens, i, Tok.QUESTION)
+        _, i = next(tokens, i)
+        left, i = expression(tokens, i)
+        i = consume(tokens, i, Tok.COLON, "Expect ':' in ternary operator expression.")
+        right, i = expression(tokens, i)
+        expr = Ternary(expr, left, right)
+    end
+    return expr, i
 end
 
 function equality(tokens, i)
@@ -30,7 +44,7 @@ function equality(tokens, i)
     while match(tokens, i, (Tok.BANG_EQUAL, Tok.EQUAL_EQUAL))
         operator, i = next(tokens, i)
         right, i = comparison(tokens, i)
-        expr = Exprs.Binary(expr, operator, right)
+        expr = Binary(expr, operator, right)
     end
 
     return expr, i
@@ -106,9 +120,9 @@ function unary(tokens, i)
 end
 
 function primary(tokens, i)
-    match(tokens, i, (Tok.TRUE,)) && return Literal(true)
-    match(tokens, i, (Tok.FALSE,)) && return Literal(false)
-    match(tokens, i, (Tok.NIL,)) && return Literal(nil)
+    match(tokens, i, (Tok.TRUE,)) && return Literal(true), i+1
+    match(tokens, i, (Tok.FALSE,)) && return Literal(false), i+1
+    match(tokens, i, (Tok.NIL,)) && return Literal(nil), i+1
 
     if match(tokens, i, (Tok.NUMBER, Tok.STRING))
         l, i = next(tokens, i)
