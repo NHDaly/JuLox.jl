@@ -1,6 +1,6 @@
 module Exprs
 
-using JuLox.Scanners: Token
+using JuLox.Scanners: Token, Position
 
 @enum ExprType begin
     BINARY
@@ -14,14 +14,15 @@ struct Expr
     kind::ExprType
     # TODO: Maybe this needs to be an Any vector or a Union{Expr,Token} for the operators?
     args_or_literal::Union{Vector{Expr}, Any}  # TODO: or should we use `Tokens.Literal`?
+    pos::Position
 end
 
 #OperatorExpr(operator::Token) = Expr(BINARY, Expr[operator, left, right])
-Binary(left::Expr, operator::Token, right::Expr) = Expr(BINARY, Expr[Literal(operator), left, right])
-Unary(operator::Token, expr::Expr) = Expr(UNARY, Expr[Literal(operator), expr])
-Grouping(expr::Expr) = Expr(GROUPING, Expr[expr])
-Literal(val::Any) = Expr(LITERAL, val)
-Ternary(expr::Expr, left::Expr, right::Expr) = Expr(TERNARY, Expr[expr, left, right])
+Binary(left::Expr, operator::Token, right::Expr, pos::Position) = Expr(BINARY, Expr[Literal(operator, pos), left, right], pos)
+Unary(operator::Token, expr::Expr, pos::Position) = Expr(UNARY, Expr[Literal(operator, pos), expr], pos)
+Grouping(expr::Expr, pos::Position) = Expr(GROUPING, Expr[expr], pos)
+Literal(val::Any, pos::Position) = Expr(LITERAL, val, pos)
+Ternary(expr::Expr, left::Expr, right::Expr, pos::Position) = Expr(TERNARY, Expr[expr, left, right], pos)
 
 
 

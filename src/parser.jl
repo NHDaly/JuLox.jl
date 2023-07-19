@@ -27,13 +27,14 @@ function expression(tokens, i)
 end
 
 function ternary(tokens, i)
+    pos = position(tokens, i)
     expr, i = equality(tokens, i)
     if check(tokens, i, Tok.QUESTION)
         _, i = next(tokens, i)
         left, i = expression(tokens, i)
         i = consume(tokens, i, Tok.COLON, "Expect ':' in ternary operator expression.")
         right, i = expression(tokens, i)
-        expr = Ternary(expr, left, right)
+        expr = Ternary(expr, left, right, pos)
     end
     return expr, i
 end
@@ -42,9 +43,11 @@ function equality(tokens, i)
     expr, i = comparison(tokens, i)
 
     while match(tokens, i, (Tok.BANG_EQUAL, Tok.EQUAL_EQUAL))
+        # TODO: should the pos be at the operator or at the start of the left expression?
+        pos = position(tokens, i)
         operator, i = next(tokens, i)
         right, i = comparison(tokens, i)
-        expr = Binary(expr, operator, right)
+        expr = Binary(expr, operator, right, pos)
     end
 
     return expr, i
@@ -76,9 +79,10 @@ function comparison(tokens, i)
     expr, i = term(tokens, i)
 
     while match(tokens, i, (Tok.GREATER, Tok.GREATER_EQUAL, Tok.LESS, Tok.LESS_EQUAL))
+        pos = position(tokens, i)
         operator, i = next(tokens, i)
         right, i = term(tokens, i)
-        expr = Binary(expr, operator, right)
+        expr = Binary(expr, operator, right, pos)
     end
 
     return expr, i
@@ -88,9 +92,10 @@ function term(tokens, i)
     expr, i = factor(tokens, i)
 
     while match(tokens, i, (Tok.MINUS, Tok.PLUS))
+        pos = position(tokens, i)
         operator, i = next(tokens, i)
         right, i = factor(tokens, i)
-        expr = Binary(expr, operator, right)
+        expr = Binary(expr, operator, right, pos)
     end
 
     return expr, i
@@ -100,19 +105,21 @@ function factor(tokens, i)
     expr, i = unary(tokens, i)
 
     while match(tokens, i, (Tok.SLASH, Tok.STAR))
+        pos = position(tokens, i)
         operator, i = next(tokens, i)
         right, i = unary(tokens, i)
-        expr = Binary(expr, operator, right)
+        expr = Binary(expr, operator, right, pos)
     end
 
     return expr, i
 end
 
 function unary(tokens, i)
+    pos = position(tokens, i)
     if match(tokens, i, (Tok.BANG, Tok.MINUS))
         operator, i = next(tokens, i)
         right, i = unary(tokens, i)
-        expr = Unary(operator, right)
+        expr = Unary(operator, right, pos)
         return expr, i
     else
         return primary(tokens, i)
@@ -120,13 +127,14 @@ function unary(tokens, i)
 end
 
 function primary(tokens, i)
-    match(tokens, i, (Tok.TRUE,)) && return Literal(true), i+1
-    match(tokens, i, (Tok.FALSE,)) && return Literal(false), i+1
-    match(tokens, i, (Tok.NIL,)) && return Literal(nil), i+1
+    pos = position(tokens, i)
+    match(tokens, i, (Tok.TRUE,)) && return Literal(true, pos), i+1
+    match(tokens, i, (Tok.FALSE,)) && return Literal(false, pos), i+1
+    match(tokens, i, (Tok.NIL,)) && return Literal(nil, pos), i+1
 
     if match(tokens, i, (Tok.NUMBER, Tok.STRING))
         l, i = next(tokens, i)
-        expr = Literal(value(l.literal))
+        expr = Literal(value(l.literal), pos)
         return expr, i
     end
 
@@ -134,7 +142,7 @@ function primary(tokens, i)
         _, i  = next(tokens, i)  # consume '('
         expr, i = expression(tokens, i)
         i = consume(tokens, i, Tok.RIGHT_PAREN, "Expect ')' after expression.")
-        expr = Grouping(expr)
+        expr = Grouping(expr, pos)
         return expr, i
     end
 

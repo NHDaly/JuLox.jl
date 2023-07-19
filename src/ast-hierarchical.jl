@@ -1,6 +1,6 @@
 module Exprs
 
-using JuLox.Scanners: Token
+using JuLox.Scanners: Token, Position
 
 abstract type Expr end
 
@@ -8,25 +8,30 @@ struct Binary <: Expr
     left::Expr
     operator::Token
     right::Expr
+    pos::Position
 end
 
 struct Grouping <: Expr
     expr::Expr
+    pos::Position
 end
 
 struct Literal <: Expr
     value::Any
+    pos::Position
 end
 
 struct Unary <: Expr
     operator::Token
     expr::Expr
+    pos::Position
 end
 
 struct Ternary <: Expr
     expr::Expr
     left::Expr
     right::Expr
+    pos::Position
 end
 
 function ast_string(e)
