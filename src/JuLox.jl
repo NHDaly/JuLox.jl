@@ -12,7 +12,7 @@ include("interpreter.jl")
 
 function main(args = ARGS)
     if length(args) > 1
-        throw_or_exit("Usage: jlox [script]")
+        throw_or_exit("Usage: jlox [script]", 64)
     elseif length(args) == 1
         run_file(args[1]);
     else
@@ -20,25 +20,36 @@ function main(args = ARGS)
     end
 end
 
-function throw_or_exit(err_msg)
-    if !isinteractive()
+function throw_or_exit(err_msg, exit_code)
+    if isinteractive()
         throw(ArgumentError(err_msg))
     else
         println(err_msg)
-        exit(64)
+        exit(exit_code)
     end
 end
 
+abstract type AbstractLoxInterpreter end
+mutable struct Interpreter <: AbstractLoxInterpreter
+    had_error::Bool
+    had_runtime_error::Bool
+    Interpreter() = new(false, false)
+end
+
 function run_file(path::AbstractString)
-    run(read(path, String))
+    interpreter = Interpreter()
+    run(interpreter, read(path, String))
 
     # Indicate an error in the exit code.
-    if g_had_error
-        throw_or_exit("Encountered fatal error.")
+    if interpreter.had_error
+        throw_or_exit("Encountered fatal error.", 65)
+    elseif interpreter.had_runtime_error
+        throw_or_exit("Encountered runtime error.", 70)
     end
 end
 
 function run_prompt()
+    interpreter = Interpreter()
     while isopen(stdin)
         print("lox> ")
         line = readline()
@@ -47,38 +58,46 @@ function run_prompt()
         # if line == ""
         #     break
         # end
-        run(line)
+        run(interpreter, line)
     end
 end
 
-function run(source::AbstractString)
-    println("Running code: ", source)
-    local expression
+function run(interpreter::AbstractLoxInterpreter, source::AbstractString)
+    #println("Running code: ", source)
     try
         tokens = Scanners.scan_tokens(source)
         expression = Parsers.parse_expr(tokens);
+        Interpreters.interpret(expression)
     catch e
-        e isa CompilerError || rethrow()
-        return nothing
+        if e isa CompilerError
+            report_error(interpreter, e)
+        elseif e isa Interpreters.RuntimeError
+            report_runtime_error(interpreter, e)
+        else
+            rethrow(e)
+        end
     end
-    return expression
-
-    # for now, just print the tokens
-    println(Exprs.ast_string(expression))
+    return nothing
 end
 
-# Ignore this naughty global variable for now.
-const g_had_error = false
+function report_error(
+    interp::AbstractLoxInterpreter,
+    line::Integer, message::AbstractString,
+)
+    report_error(interp, line, "", message)
+end
 
-report_error(line::Integer, message::AbstractString) = report_error(line, "", message)
-
-function report_error(line::Integer, location::AbstractString, message::AbstractString)
-    g_had_error = true
+function report_error(
+    interp::AbstractLoxInterpreter,
+    line::Integer, location::AbstractString, message::AbstractString,
+)
+    interp.had_error = true
     println("[line $line] Error$location: $message")
 end
 
-function report_runtime_error(e::Interpreters.RuntimeError)
-    println(e.msg, "\n[line ", e.token.line, "]")
+function report_runtime_error(interp::AbstractLoxInterpreter, e::Interpreters.RuntimeError)
+    interp.had_runtime_error = true
+    println(e.msg, "\n[line ", e.pos.line, "]")
 end
 
 # -----------------------------------
