@@ -1,9 +1,14 @@
 module JuLox
 
+abstract type CompilerError <: Exception end
+function report_error end
+
 #include("scanner-mutable.jl")
 include("scanner.jl")
-# include("ast-hierarchical.jl")
-include("ast-flat.jl")
+include("ast-hierarchical.jl")
+# include("ast-flat.jl")
+include("parser.jl")
+include("interpreter.jl")
 
 function main(args = ARGS)
     if length(args) > 1
@@ -48,12 +53,18 @@ end
 
 function run(source::AbstractString)
     println("Running code: ", source)
-    tokens = scan_tokens(source)
+    local expression
+    try
+        tokens = Scanners.scan_tokens(source)
+        expression = Parsers.parse_expr(tokens);
+    catch e
+        e isa CompilerError || rethrow()
+        return nothing
+    end
+    return expression
 
     # for now, just print the tokens
-    for token in tokens
-        println(token)
-    end
+    println(Exprs.ast_string(expression))
 end
 
 # Ignore this naughty global variable for now.
@@ -66,19 +77,9 @@ function report_error(line::Integer, location::AbstractString, message::Abstract
     println("[line $line] Error$location: $message")
 end
 
-
-function exprs_main()
-    expression = Exprs.Binary(
-        Exprs.Unary(
-            Token(MINUS, "-"),
-            Exprs.Literal(123)),
-        Token(STAR, "*"),
-        Exprs.Grouping(
-            Exprs.Literal(45.67)))
-
-    return Exprs.ast_string(expression)
+function report_runtime_error(e::Interpreters.RuntimeError)
+    println(e.msg, "\n[line ", e.token.line, "]")
 end
-
 
 # -----------------------------------
 

@@ -2,3 +2,10 @@ name = "JuLox"
 uuid = "5a1867a0-f4f2-4489-a019-b6be53ca0ffa"
 authors = ["Nathan Daly <nhdaly@gmail.com>"]
 version = "0.1.0"
+
+[extras]
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["ReTestItems", "Test"]
