@@ -5,8 +5,8 @@ function report_error end
 
 #include("scanner-mutable.jl")
 include("scanner.jl")
-# include("ast-hierarchical.jl")
-include("ast-flat.jl")
+ include("ast-hierarchical.jl")
+#include("ast-flat.jl")
 include("parser.jl")
 
 function main(args = ARGS)

@@ -23,6 +23,12 @@ struct Unary <: Expr
     expr::Expr
 end
 
+struct Ternary <: Expr
+    expr::Expr
+    left::Expr
+    right::Expr
+end
+
 function ast_string(e)
     io = IOBuffer()
     print_ast(io, e)
@@ -33,6 +39,7 @@ print_ast(io::IO, e::Binary) = parenthesize(io, e.operator.lexeme, e.left, e.rig
 print_ast(io::IO, e::Grouping) = parenthesize(io, "group", e.expr)
 print_ast(io::IO, e::Literal) = (print(io, e.value === nothing ? "nil" : e.value); nothing)
 print_ast(io::IO, e::Unary) = parenthesize(io, e.operator.lexeme, e.expr)
+print_ast(io::IO, e::Ternary) = parenthesize(io, "?:", e.expr, e.left, e.right)
 
 function parenthesize(io::IO, name, exprs...)
     print(io, "(", name)
