@@ -2,6 +2,8 @@ module JuLox
 
 #include("scanner-mutable.jl")
 include("scanner.jl")
+# include("ast-hierarchical.jl")
+include("ast-flat.jl")
 
 function main(args = ARGS)
     if length(args) > 1
@@ -64,6 +66,18 @@ function report_error(line::Integer, location::AbstractString, message::Abstract
     println("[line $line] Error$location: $message")
 end
 
+
+function exprs_main()
+    expression = Exprs.Binary(
+        Exprs.Unary(
+            Token(MINUS, "-"),
+            Exprs.Literal(123)),
+        Token(STAR, "*"),
+        Exprs.Grouping(
+            Exprs.Literal(45.67)))
+
+    return Exprs.ast_string(expression)
+end
 
 
 # -----------------------------------
