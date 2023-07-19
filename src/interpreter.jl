@@ -37,7 +37,7 @@ function evaluate(e::Unary)
     if e.operator.token_type == Tok.BANG
         return !is_truthy(right)
     elseif e.operator.token_type == Tok.MINUS
-        check_number_operand(e.operator, right, e.pos)
+        check_number_operand(e.operator, e.pos, right)
         return -right
     end
 
@@ -45,11 +45,16 @@ function evaluate(e::Unary)
     return nothing
 end
 is_truthy(v) = v === nothing || v === false ? false : true
-function check_number_operand(operator, operand, pos)
+function check_number_operand(operator, pos, operand)
     if operand isa Number
         return nothing
     end
     throw(RuntimeError(operator, pos, "Operand to $(operator.lexeme) must be a number. Got $(repr(operand))"))
+end
+function check_number_operands(op, pos, operands...)
+    for v in operands
+        check_number_operand(op, pos, v)
+    end
 end
 struct RuntimeError <: Exception
     token::Token
@@ -63,13 +68,17 @@ function evaluate(e::Binary)
     right = evaluate(e.right)
 
     if e.operator.token_type == Tok.MINUS
+        check_number_operands(e.operator, e.pos, left, right)
         return left - right
     elseif e.operator.token_type == Tok.SLASH
+        check_number_operands(e.operator, e.pos, left, right)
         return left / right
     elseif e.operator.token_type == Tok.STAR
+        check_number_operands(e.operator, e.pos, left, right)
         return left * right
     elseif e.operator.token_type == Tok.PLUS
         if left isa Number && right isa Number
+            check_number_operands(e.operator, e.pos, left, right)
             return left + right
         elseif left isa String && right isa String
             return left * right
@@ -77,12 +86,16 @@ function evaluate(e::Binary)
         # Unreachable
 
     elseif e.operator.token_type == Tok.GREATER
+        check_matching_types(e.operator, e.pos, left, right)
         return left > right
     elseif e.operator.token_type == Tok.GREATER_EQUAL
+        check_matching_types(e.operator, e.pos, left, right)
         return left >= right
     elseif e.operator.token_type == Tok.LESS
+        check_matching_types(e.operator, e.pos, left, right)
         return left < right
     elseif e.operator.token_type == Tok.LESS_EQUAL
+        check_matching_types(e.operator, e.pos, left, right)
         return left <= right
     elseif e.operator.token_type == Tok.BANG_EQUAL
         return !is_equal(left, right)
@@ -93,6 +106,13 @@ function evaluate(e::Binary)
     # Unreachable.
     return nothing
 end
+function check_matching_types(operator, pos, a, b)
+    if typeof(a) == typeof(b)
+        return nothing
+    end
+    throw(RuntimeError(operator, pos, "Operands to $(operator.lexeme) must have matching types. Got $(repr(a)) and $(repr(b))"))
+end
+
 function is_equal(a, b)
     (a === nothing && b === nothing) && return true
     (a === nothing || b === nothing) && return false

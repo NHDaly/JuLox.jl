@@ -12,7 +12,7 @@ include("interpreter.jl")
 
 function main(args = ARGS)
     if length(args) > 1
-        throw_or_exit("Usage: jlox [script]")
+        throw_or_exit("Usage: jlox [script]", 64)
     elseif length(args) == 1
         run_file(args[1]);
     else
@@ -20,12 +20,12 @@ function main(args = ARGS)
     end
 end
 
-function throw_or_exit(err_msg)
-    if !isinteractive()
+function throw_or_exit(err_msg, exit_code)
+    if isinteractive()
         throw(ArgumentError(err_msg))
     else
         println(err_msg)
-        exit(64)
+        exit(exit_code)
     end
 end
 
@@ -41,8 +41,10 @@ function run_file(path::AbstractString)
     run(interpreter, read(path, String))
 
     # Indicate an error in the exit code.
-    if g_had_error
-        throw_or_exit("Encountered fatal error.")
+    if interpreter.had_error
+        throw_or_exit("Encountered fatal error.", 65)
+    elseif interpreter.had_runtime_error
+        throw_or_exit("Encountered runtime error.", 70)
     end
 end
 

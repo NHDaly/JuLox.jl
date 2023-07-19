@@ -157,18 +157,22 @@ function consume(tokens, i, tok_type, err_msg)
 end
 
 function make_error(tokens, i, msg)
-    report_error(peek(tokens, i), position(tokens, i), msg)
-    return ParseError()
-end
-function JuLox.report_error(token::Token, pos::Position, msg::AbstractString)
-    if token.token_type == Tok.EOF
-        JuLox.report_error(pos.line, " at end", msg)
-    else
-        JuLox.report_error(pos.line, " at '$(token.lexeme)'", msg)
-    end
+    return ParseError(peek(tokens, i), position(tokens, i), msg)
 end
 
-struct ParseError <: JuLox.CompilerError end
+struct ParseError <: JuLox.CompilerError
+    token::Token
+    pos::Position
+    msg::AbstractString
+end
+
+function JuLox.report_error(interp, err::ParseError)
+    if err.token.token_type == Tok.EOF
+        JuLox.report_error(interp, err.pos.line, " at end", err.msg)
+    else
+        JuLox.report_error(interp, err.pos.line, " at '$(err.token.lexeme)'", err.msg)
+    end
+end
 
 function synchronize(tokens, i)
     expr, i = next(tokens, i)
